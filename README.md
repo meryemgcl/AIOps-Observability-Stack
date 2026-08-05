@@ -31,7 +31,8 @@
 
 | | |
 |---|---|
-| 🤖 **AI Analizi** | LangChain ve Llama 3 (Groq API) kullanarak sistem hatalarını (Out of Memory, High Latency vb.) okur, analiz eder ve Türkçe RCA (Kök Neden Analizi) üretir. |
+| 🤖 **AI Analiz** | LangChain ve Llama 3 (Groq API) kullanarak sistem hatalarını (Out of Memory, High Latency vb.) okur, analiz eder ve Türkçe RCA (Kök Neden Analizi) üretir. |
+| 📱 **Telegram Alert** | AI herhangi bir anomali tespit ettiğinde kök neden analizini anında Telegram botunuz üzerinden size mesaj atar. |
 | 📊 **Canlı Metrikler** | Prometheus ile CPU, RAM ve İstek (Request) istatistiklerini anlık toplar. |
 | 🪵 **Merkezi Loglama** | Promtail & Loki entegrasyonu sayesinde tüm konteyner logları tek bir merkezde toplanır ve filtrelenebilir hale gelir. |
 | 📈 **Grafana Dashboard** | Otomatik yüklenen (provisioned) dashboard sayesinde sistemi açar açmaz görselleştirilmiş canlı veriler sunar. |
@@ -67,6 +68,8 @@ cd AIOps-Observability-Stack
 2. Ortam değişkenlerini ayarlayın (Ana dizinde `.env` dosyası oluşturun):
 ```env
 GROQ_API_KEY=sizin_groq_api_anahtariniz
+TELEGRAM_BOT_TOKEN=botfather_token_buraya
+TELEGRAM_CHAT_ID=chat_id_buraya
 ```
 
 3. Sistemi başlatın:
