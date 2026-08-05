@@ -1,0 +1,79 @@
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aiops-prometheus
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    networks:
+      - observability
+
+  loki:
+    image: grafana/loki:latest
+    container_name: aiops-loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: aiops-promtail
+    volumes:
+      - shared_logs:/var/log
+      - ./config/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aiops-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - observability
+
+  dummy_service:
+    build: ./dummy_service
+    container_name: aiops-dummy
+    ports:
+      - "8000:8000"
+    volumes:
+      - shared_logs:/app/logs
+    networks:
+      - observability
+
+  ai_analyzer:
+    build: ./ai_analyzer
+    container_name: aiops-ai-analyzer
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - LOKI_URL=http://loki:3100
+    depends_on:
+      - loki
+    networks:
+      - observability
+
+networks:
+  observability:
+    driver: bridge
+
+volumes:
+  shared_logs:
