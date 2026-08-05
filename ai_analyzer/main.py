@@ -31,10 +31,11 @@ ANALYSIS_COUNT = Counter('aiops_analyses_total', 'Toplam AI analiz sayısı')
 ALERT_COUNT = Counter('aiops_alerts_total', 'Gönderilen toplam uyarı sayısı')
 
 # --- Ortam Değişkenleri ---
-GROQ_API_KEY     = os.getenv("GROQ_API_KEY", "")
-LOKI_URL         = os.getenv("LOKI_URL", "http://loki:3100")
-DISCORD_WEBHOOK  = os.getenv("DISCORD_WEBHOOK_URL", "")
-ANALYSIS_INTERVAL = int(os.getenv("ANALYSIS_INTERVAL_SECONDS", "60"))
+GROQ_API_KEY       = os.getenv("GROQ_API_KEY", "")
+LOKI_URL           = os.getenv("LOKI_URL", "http://loki:3100")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID", "")
+ANALYSIS_INTERVAL  = int(os.getenv("ANALYSIS_INTERVAL_SECONDS", "60"))
 
 # --- LangChain Kurulumu ---
 RCA_PROMPT = ChatPromptTemplate.from_messages([
@@ -84,35 +85,36 @@ def fetch_error_logs() -> list[str]:
         return []
 
 
-def send_discord_alert(analysis: str, log_count: int):
-    """Discord webhook'a analiz sonucunu gönderir."""
-    if not DISCORD_WEBHOOK:
+def send_telegram_alert(analysis: str, log_count: int):
+    """Telegram bot üzerinden analiz sonucunu gönderir."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # MarkdownV2 veya HTML formatında mesaj hazırlayabiliriz
+    message = (
+        f"🚨 <b>AIOps - Sistem Anomali Raporu</b>\n"
+        f"<i>Son 5 dakikada {log_count} hata logu tespit edildi.</i>\n\n"
+        f"🤖 <b>AI Analiz Özeti:</b>\n"
+        f"<pre>{analysis[:3000]}</pre>\n\n"
+        f"🕰️ <i>AIOps AI Analyzer • {timestamp}</i>"
+    )
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
-        "embeds": [{
-            "title": "🚨 AIOps - Sistem Anomali Raporu",
-            "description": f"**Son 5 dakikada {log_count} hata logu tespit edildi.**",
-            "color": 15158332,  # Kırmızı
-            "fields": [
-                {
-                    "name": "🤖 AI Analiz Özeti",
-                    "value": analysis[:1000] + ("..." if len(analysis) > 1000 else ""),
-                    "inline": False
-                }
-            ],
-            "footer": {"text": f"AIOps AI Analyzer • {timestamp}"}
-        }]
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML"
     }
 
     try:
-        resp = httpx.post(DISCORD_WEBHOOK, json=payload, timeout=10)
+        resp = httpx.post(url, json=payload, timeout=10)
         resp.raise_for_status()
-        logger.info("Discord bildirimi başarıyla gönderildi.")
+        logger.info("Telegram bildirimi başarıyla gönderildi.")
         ALERT_COUNT.inc()
     except Exception as e:
-        logger.error(f"Discord bildirimi gönderilemedi: {e}")
+        logger.error(f"Telegram bildirimi gönderilemedi: {e}")
 
 
 def run_analysis():
@@ -135,7 +137,7 @@ def run_analysis():
                     analysis = chain.invoke({"logs": log_text})
                     ANALYSIS_COUNT.inc()
                     logger.info(f"\n{'='*60}\n🤖 AI KÖK NEDEN ANALİZİ:\n{analysis}\n{'='*60}")
-                    send_discord_alert(analysis, len(logs))
+                    send_telegram_alert(analysis, len(logs))
                 except Exception as e:
                     logger.error(f"AI analizi başarısız: {e}")
             else:
@@ -182,5 +184,5 @@ def analyze_now():
     log_text = "\n".join(logs[:50])
     analysis = chain.invoke({"logs": log_text})
     ANALYSIS_COUNT.inc()
-    send_discord_alert(analysis, len(logs))
+    send_telegram_alert(analysis, len(logs))
     return {"analysis": analysis, "log_count": len(logs)}
