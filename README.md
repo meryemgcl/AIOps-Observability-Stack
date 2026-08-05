@@ -18,10 +18,10 @@
 ## 📸 Ekran Görüntüleri
 
 ### Grafana Canlı İzleme Paneli (Main Dashboard)
-*(Dashboard ekran görüntüsünü buraya ekleyin)*
+![AIOps Dashboard](docs/screenshots/dashboard.jpg)
 
 ### Yapay Zeka Analizi (Swagger UI)
-*(Swagger AI analiz sonucu ekran görüntüsünü buraya ekleyin)*
+![AI Analyzer Swagger](docs/screenshots/swagger.jpg)
 
 > **AIOps felsefesi:** Tek bir komutla (`docker compose up`) ayağa kalkan, dış bağımlılığı minimize edilmiş, otomatik log toplayan ve LLM ile yorumlayan tam yığın (full-stack) gözlemlenebilirlik platformu.
 
